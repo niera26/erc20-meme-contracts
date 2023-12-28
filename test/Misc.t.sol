@@ -16,6 +16,12 @@ contract MiscTest is ERC20MemeTest {
     function testRenounceOwnership() public {
         address user = vm.addr(1);
 
+        // ensure we can sell after renouncing ownership.
+        buyToken(user, 1 ether);
+
+        assertGt(token.balanceOf(address(token)), 0);
+        assertEq(token.marketing().balance, 0);
+
         // by default owner is deployer.
         assertEq(token.owner(), address(this));
 
@@ -51,6 +57,25 @@ contract MiscTest is ERC20MemeTest {
         token.renounceOwnership();
 
         assertEq(token.owner(), address(0));
+
+        // sell the user tokens.
+        sellToken(user, token.balanceOf(address(user)));
+
+        assertEq(token.balanceOf(address(token)), 0);
+        assertGt(token.marketing().balance, 0);
+
+        uint256 originalMarketingBalance = token.marketing().balance;
+
+        // no more taxes.
+        buyToken(user, 1 ether);
+
+        assertEq(token.balanceOf(address(token)), 0);
+        assertEq(token.marketing().balance, originalMarketingBalance);
+
+        sellToken(user, token.balanceOf(address(user)));
+
+        assertEq(token.balanceOf(address(token)), 0);
+        assertEq(token.marketing().balance, originalMarketingBalance);
     }
 
     function testRemoveMaxWallet() public {
